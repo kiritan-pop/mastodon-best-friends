@@ -25,6 +25,15 @@ class Form::AdminSettings
     preview_sensitive_media
     custom_css
     profile_directory
+    thumbnail
+    hero
+    mascot
+    spam_check_enabled
+    trends
+    trendable_by_default
+    show_domain_blocks
+    show_domain_blocks_rationale
+    noindex
   ).freeze
 
   BOOLEAN_KEYS = %i(
@@ -36,6 +45,10 @@ class Form::AdminSettings
     show_known_fediverse_at_about_page
     preview_sensitive_media
     profile_directory
+    spam_check_enabled
+    trends
+    trendable_by_default
+    noindex
   ).freeze
 
   UPLOAD_KEYS = %i(
@@ -46,12 +59,15 @@ class Form::AdminSettings
 
   attr_accessor(*KEYS)
 
-  validates :site_short_description, :site_description, :site_extended_description, :site_terms, :closed_registrations_message, html: true
+  validates :site_short_description, :site_description, html: { wrap_with: :p }
+  validates :site_extended_description, :site_terms, :closed_registrations_message, html: true
   validates :registrations_mode, inclusion: { in: %w(open approved none) }
   validates :min_invite_role, inclusion: { in: %w(disabled user moderator admin) }
   validates :site_contact_email, :site_contact_username, presence: true
   validates :site_contact_username, existing_username: true
   validates :bootstrap_timeline_accounts, existing_username: { multiple: true }
+  validates :show_domain_blocks, inclusion: { in: %w(disabled users all) }
+  validates :show_domain_blocks_rationale, inclusion: { in: %w(disabled users all) }
 
   def initialize(_attributes = {})
     super
@@ -64,7 +80,7 @@ class Form::AdminSettings
     KEYS.each do |key|
       value = instance_variable_get("@#{key}")
 
-      if UPLOAD_KEYS.include?(key)
+      if UPLOAD_KEYS.include?(key) && !value.nil?
         upload = SiteUpload.where(var: key).first_or_initialize(var: key)
         upload.update(file: value)
       else

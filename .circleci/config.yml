@@ -3,7 +3,7 @@ version: 2
 aliases:
   - &defaults
     docker:
-      - image: circleci/ruby:2.6.0-stretch-node
+      - image: circleci/ruby:2.6-stretch-node
         environment: &ruby_environment
           BUNDLE_APP_CONFIG: ./.bundle/
           DB_HOST: localhost
@@ -105,14 +105,14 @@ jobs:
   install-ruby2.5:
     <<: *defaults
     docker:
-      - image: circleci/ruby:2.5.3-stretch-node
+      - image: circleci/ruby:2.5-stretch-node
         environment: *ruby_environment
     <<: *install_ruby_dependencies
 
   install-ruby2.4:
     <<: *defaults
     docker:
-      - image: circleci/ruby:2.4.5-stretch-node
+      - image: circleci/ruby:2.4-stretch-node
         environment: *ruby_environment
     <<: *install_ruby_dependencies
 
@@ -131,40 +131,40 @@ jobs:
   test-ruby2.6:
     <<: *defaults
     docker:
-      - image: circleci/ruby:2.6.0-stretch-node
+      - image: circleci/ruby:2.6-stretch-node
         environment: *ruby_environment
       - image: circleci/postgres:10.6-alpine
         environment:
           POSTGRES_USER: root
-      - image: circleci/redis:5.0.3-alpine3.8
+      - image: circleci/redis:5-alpine
     <<: *test_steps
 
   test-ruby2.5:
     <<: *defaults
     docker:
-      - image: circleci/ruby:2.5.3-stretch-node
+      - image: circleci/ruby:2.5-stretch-node
         environment: *ruby_environment
       - image: circleci/postgres:10.6-alpine
         environment:
           POSTGRES_USER: root
-      - image: circleci/redis:4.0.12-alpine
+      - image: circleci/redis:5-alpine
     <<: *test_steps
 
   test-ruby2.4:
     <<: *defaults
     docker:
-      - image: circleci/ruby:2.4.5-stretch-node
+      - image: circleci/ruby:2.4-stretch-node
         environment: *ruby_environment
       - image: circleci/postgres:10.6-alpine
         environment:
           POSTGRES_USER: root
-      - image: circleci/redis:4.0.12-alpine
+      - image: circleci/redis:5-alpine
     <<: *test_steps
 
   test-webui:
     <<: *defaults
     docker:
-      - image: circleci/node:8.15.0-stretch
+      - image: circleci/node:12.9-stretch
     steps:
       - *attach_workspace
       - run: ./bin/retry yarn test:jest
@@ -173,10 +173,48 @@ jobs:
     <<: *defaults
     steps:
       - *attach_workspace
+      - *install_system_dependencies
       - run: bundle exec i18n-tasks check-normalized
-      - run: bundle exec i18n-tasks unused
-      - run: bundle exec i18n-tasks missing -t plural
+      - run: bundle exec i18n-tasks unused -l en
       - run: bundle exec i18n-tasks check-consistent-interpolations
+      - run: bundle exec rake repo:check_locales_files
+
+  docker-build:
+    docker:
+      - image: circleci/python:3.6.4
+        environment:
+          DOCKER_BUILDKIT: "1"
+    working_directory: ~/projects/mastodon/
+    steps:
+      - run:
+          name: Install AWS CLI
+          command: sudo pip install awscli --upgrade
+      - run:
+          name: Configure AWS CLI
+          command: |
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID --profile default
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY --profile default
+            aws configure set region ${AWS_DEFAULT_REGION} --profile default
+      - checkout
+      - setup_remote_docker:
+          version: 18.09.3
+      - run:
+          name: Login to Amazon ECR
+          command: |
+            $(aws ecr get-login --no-include-email --region ${AWS_DEFAULT_REGION} )
+      - run:
+          name: Pull latest image from ECR
+          command: docker pull ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/mastodon:latest
+      - run:
+          name: Build docker image
+          command: docker build -f Dockerfile.best-friends -t mastodon:latest --build-arg BASE_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/debian:latest --cache-from ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/mastodon:latest .
+      - run:
+          name: Push docker image to ECR
+          command: |
+            docker tag mastodon:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/mastodon:latest
+            docker tag mastodon:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/mastodon:${CIRCLE_BRANCH}
+            docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/mastodon:latest
+            docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/mastodon:${CIRCLE_BRANCH}
 
 workflows:
   version: 2
@@ -215,3 +253,4 @@ workflows:
       - check-i18n:
           requires:
             - install-ruby2.6
+      - docker-build

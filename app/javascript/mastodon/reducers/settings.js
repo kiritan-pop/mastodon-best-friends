@@ -10,9 +10,11 @@ import uuid from '../uuid';
 const initialState = ImmutableMap({
   saved: true,
 
-  onboarded: false,
-
   skinTone: 1,
+
+  trends: ImmutableMap({
+    show: true,
+  }),
 
   home: ImmutableMap({
     shows: ImmutableMap({
@@ -74,14 +76,11 @@ const initialState = ImmutableMap({
       body: '',
     }),
   }),
-
-  trends: ImmutableMap({
-    show: true,
-  }),
 });
 
 const defaultColumns = fromJS([
   { id: 'COMPOSE', uuid: uuid(), params: {} },
+  { id: 'COMMUNITY', uuid: uuid(), params: {} },
   { id: 'HOME', uuid: uuid(), params: {} },
   { id: 'NOTIFICATIONS', uuid: uuid(), params: {} },
 ]);

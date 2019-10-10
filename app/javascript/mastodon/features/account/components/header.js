@@ -15,6 +15,7 @@ import DropdownMenuContainer from 'mastodon/containers/dropdown_menu_container';
 const messages = defineMessages({
   unfollow: { id: 'account.unfollow', defaultMessage: 'Unfollow' },
   follow: { id: 'account.follow', defaultMessage: 'Follow' },
+  cancel_follow_request: { id: 'account.cancel_follow_request', defaultMessage: 'Cancel follow request' },
   requested: { id: 'account.requested', defaultMessage: 'Awaiting approval. Click to cancel follow request' },
   unblock: { id: 'account.unblock', defaultMessage: 'Unblock @{name}' },
   edit_profile: { id: 'account.edit_profile', defaultMessage: 'Edit profile' },
@@ -22,8 +23,6 @@ const messages = defineMessages({
   account_locked: { id: 'account.locked_info', defaultMessage: 'This account privacy status is set to locked. The owner manually reviews who can follow them.' },
   mention: { id: 'account.mention', defaultMessage: 'Mention @{name}' },
   direct: { id: 'account.direct', defaultMessage: 'Direct message @{name}' },
-  edit_profile: { id: 'account.edit_profile', defaultMessage: 'Edit profile' },
-  unblock: { id: 'account.unblock', defaultMessage: 'Unblock @{name}' },
   unmute: { id: 'account.unmute', defaultMessage: 'Unmute @{name}' },
   block: { id: 'account.block', defaultMessage: 'Block @{name}' },
   mute: { id: 'account.mute', defaultMessage: 'Mute @{name}' },
@@ -81,6 +80,47 @@ class Header extends ImmutablePureComponent {
     return !location.pathname.match(/\/(followers|following)\/?$/);
   }
 
+  _updateEmojis () {
+    const node = this.node;
+
+    if (!node || autoPlayGif) {
+      return;
+    }
+
+    const emojis = node.querySelectorAll('.custom-emoji');
+
+    for (var i = 0; i < emojis.length; i++) {
+      let emoji = emojis[i];
+      if (emoji.classList.contains('status-emoji')) {
+        continue;
+      }
+      emoji.classList.add('status-emoji');
+
+      emoji.addEventListener('mouseenter', this.handleEmojiMouseEnter, false);
+      emoji.addEventListener('mouseleave', this.handleEmojiMouseLeave, false);
+    }
+  }
+
+  componentDidMount () {
+    this._updateEmojis();
+  }
+
+  componentDidUpdate () {
+    this._updateEmojis();
+  }
+
+  handleEmojiMouseEnter = ({ target }) => {
+    target.src = target.getAttribute('data-original');
+  }
+
+  handleEmojiMouseLeave = ({ target }) => {
+    target.src = target.getAttribute('data-static');
+  }
+
+  setRef = (c) => {
+    this.node = c;
+  }
+
   render () {
     const { account, intl, domain, identity_proofs } = this.props;
 
@@ -109,7 +149,7 @@ class Header extends ImmutablePureComponent {
       if (!account.get('relationship')) { // Wait until the relationship is loaded
         actionBtn = '';
       } else if (account.getIn(['relationship', 'requested'])) {
-        actionBtn = <Button className='logo-button' text={intl.formatMessage(messages.requested)} onClick={this.props.onFollow} />;
+        actionBtn = <Button className='logo-button' text={intl.formatMessage(messages.cancel_follow_request)} title={intl.formatMessage(messages.requested)} onClick={this.props.onFollow} />;
       } else if (!account.getIn(['relationship', 'blocking'])) {
         actionBtn = <Button disabled={account.getIn(['relationship', 'blocked_by'])} className={classNames('logo-button', { 'button--destructive': account.getIn(['relationship', 'following']) })} text={intl.formatMessage(account.getIn(['relationship', 'following']) ? messages.unfollow : messages.follow)} onClick={this.props.onFollow} />;
       } else if (account.getIn(['relationship', 'blocking'])) {
@@ -202,7 +242,7 @@ class Header extends ImmutablePureComponent {
     const acct            = account.get('acct').indexOf('@') === -1 && domain ? `${account.get('acct')}@${domain}` : account.get('acct');
 
     return (
-      <div className={classNames('account__header', { inactive: !!account.get('moved') })}>
+      <div className={classNames('account__header', { inactive: !!account.get('moved') })} ref={this.setRef}>
         <div className='account__header__image'>
           <div className='account__header__info'>
             {info}

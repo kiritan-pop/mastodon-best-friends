@@ -5,16 +5,15 @@ import Avatar from '../../../components/avatar';
 import DisplayName from '../../../components/display_name';
 import StatusContent from '../../../components/status_content';
 import MediaGallery from '../../../components/media_gallery';
-import AttachmentList from '../../../components/attachment_list';
 import { Link } from 'react-router-dom';
 import { FormattedDate, FormattedNumber } from 'react-intl';
 import Card from './card';
 import ImmutablePureComponent from 'react-immutable-pure-component';
 import Video from '../../video';
+import Audio from '../../audio';
 import scheduleIdleTask from '../../ui/util/schedule_idle_task';
 import classNames from 'classnames';
 import Icon from 'mastodon/components/icon';
-import PollContainer from 'mastodon/containers/poll_container';
 
 export default class DetailedStatus extends ImmutablePureComponent {
 
@@ -31,6 +30,8 @@ export default class DetailedStatus extends ImmutablePureComponent {
     onHeightChange: PropTypes.func,
     domain: PropTypes.string.isRequired,
     compact: PropTypes.bool,
+    showMedia: PropTypes.bool,
+    onToggleMediaVisibility: PropTypes.func,
   };
 
   state = {
@@ -106,24 +107,35 @@ export default class DetailedStatus extends ImmutablePureComponent {
       outerStyle.height = `${this.state.height}px`;
     }
 
-    if (status.get('poll')) {
-      media = <PollContainer pollId={status.get('poll')} />;
-    } else if (status.get('media_attachments').size > 0) {
-      if (status.get('media_attachments').some(item => item.get('type') === 'unknown')) {
-        media = <AttachmentList media={status.get('media_attachments')} />;
+    if (status.get('media_attachments').size > 0) {
+      if (status.getIn(['media_attachments', 0, 'type']) === 'audio') {
+        const attachment = status.getIn(['media_attachments', 0]);
+
+        media = (
+          <Audio
+            src={attachment.get('url')}
+            alt={attachment.get('description')}
+            duration={attachment.getIn(['meta', 'original', 'duration'], 0)}
+            height={110}
+            preload
+          />
+        );
       } else if (status.getIn(['media_attachments', 0, 'type']) === 'video') {
-        const video = status.getIn(['media_attachments', 0]);
+        const attachment = status.getIn(['media_attachments', 0]);
 
         media = (
           <Video
-            preview={video.get('preview_url')}
-            src={video.get('url')}
-            alt={video.get('description')}
+            preview={attachment.get('preview_url')}
+            blurhash={attachment.get('blurhash')}
+            src={attachment.get('url')}
+            alt={attachment.get('description')}
             width={300}
             height={150}
             inline
             onOpenVideo={this.handleOpenVideo}
             sensitive={status.get('sensitive')}
+            visible={this.props.showMedia}
+            onToggleVisibility={this.props.onToggleMediaVisibility}
           />
         );
       } else {
@@ -134,6 +146,8 @@ export default class DetailedStatus extends ImmutablePureComponent {
             media={status.get('media_attachments')}
             height={300}
             onOpenMedia={this.props.onOpenMedia}
+            visible={this.props.showMedia}
+            onToggleVisibility={this.props.onToggleMediaVisibility}
           />
         );
       }
