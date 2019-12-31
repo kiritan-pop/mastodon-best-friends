@@ -17,16 +17,16 @@ RSpec.describe Friends::ProfileEmoji::Emoji do
 
     context 'when domain not given' do
       let(:domain) { nil }
-      let(:text) { "hello :@#{account1.acct}: :@#{account2.acct}: :@not_found: world" }
+      let(:text) { "hello :@#{account1.local_username_and_domain}: :@#{account1.acct}: :@#{account2.acct}: :@not_found: world" }
 
-      it { expect(subject.map(&:shortcode)).to eq ["@#{account1.acct}", "@#{account2.acct}"] }
+      it { expect(subject.map(&:shortcode)).to eq ["@#{account1.local_username_and_domain}","@#{account1.acct}", "@#{account2.acct}"] }
     end
 
     context 'when domain given' do
       let(:domain) { 'example.com' }
-      let(:text) { "hello :@#{account1.local_username_and_domain}: :@#{account2.username}: :@not_found:" }
+      let(:text) { "hello :@#{account1.local_username_and_domain}: :@#{account2.acct}: :@#{account2.username}: :@not_found: world" }
 
-      it { expect(subject.map(&:shortcode)).to eq ["@#{account1.acct}", "@#{account2.acct}"] }
+      it { expect(subject.map(&:shortcode)).to eq ["@#{account1.local_username_and_domain}","@#{account2.acct}", "@#{account2.username}"] }
     end
   end
 end

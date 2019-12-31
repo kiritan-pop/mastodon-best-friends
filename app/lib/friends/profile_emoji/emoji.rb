@@ -13,7 +13,7 @@ module Friends
         (:#{SHORTCODE_RE_FRAGMENT}:)
         (?=[^[:alnum:]:]|$)/x
 
-      attributes :account
+      attributes :account, :shortcode
 
       Image = Struct.new(:source) do
         def url(type = :original)
@@ -24,10 +24,6 @@ module Friends
 
       def serializer_class
         REST::CustomEmojiSerializer
-      end
-
-      def shortcode
-        "@#{account.acct}"
       end
 
       def image
@@ -53,11 +49,12 @@ module Friends
 
           return [] if shortcodes.empty?
 
-          shortcodes.map { |_, username, _, server|
+          shortcodes.map { |shortcode, username, _, server|
+            pp shortcode,username,server,domain
             server ||= domain
             server = nil if server == Rails.configuration.x.local_domain
-            EntityCache.instance.avatar(username, server)
-          }.compact.map { |account| new(account: account) }
+            [EntityCache.instance.avatar(username, server), shortcode[1..-2]]
+          }.map { |account, shortcode| account ? new(account: account, shortcode: shortcode) : nil }.compact
         end
       end
     end
