@@ -50,7 +50,6 @@ module Friends
           return [] if shortcodes.empty?
 
           shortcodes.map { |shortcode, username, _, server|
-            pp shortcode,username,server,domain
             server ||= domain
             server = nil if server == Rails.configuration.x.local_domain
             [EntityCache.instance.avatar(username, server), shortcode[1..-2]]
