@@ -1,8 +1,6 @@
 // Notes!
 // Sass color functions, "darken" and "lighten" are automatically replaced.
 
-@import 'diff-best-friends.scss';
-
 html {
   scrollbar-color: $ui-base-color rgba($ui-base-color, 0.25);
 }
@@ -776,3 +774,5 @@ html {
 .audio-player .video-player__time-total {
   color: $primary-text-color;
 }
+
+@import 'diff-best-friends.scss';
