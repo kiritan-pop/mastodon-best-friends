@@ -267,7 +267,6 @@ Rails.application.routes.draw do
     end
 
     resources :account_moderation_notes, only: [:create, :destroy]
-    resources :announcements
 
     resources :tags, only: [:index, :show, :update] do
       collection do

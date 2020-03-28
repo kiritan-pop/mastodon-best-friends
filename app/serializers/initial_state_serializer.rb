@@ -5,7 +5,6 @@ class InitialStateSerializer < ActiveModel::Serializer
              :media_attachments, :settings
 
   has_one :push_subscription, serializer: REST::WebPushSubscriptionSerializer
-  has_many :announcements, serializer: REST::AnnouncementSerializer
 
   def meta
     store = {
@@ -74,10 +73,6 @@ class InitialStateSerializer < ActiveModel::Serializer
 
   def media_attachments
     { accept_content_types: MediaAttachment.supported_file_extensions + MediaAttachment.supported_mime_types }
-  end
-
-  def announcements
-    Announcement.all
   end
 
   private
