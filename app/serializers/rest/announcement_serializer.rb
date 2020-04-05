@@ -46,4 +46,6 @@ class REST::AnnouncementSerializer < ActiveModel::Serializer
       object.pretty_acct
     end
   end
+
+  include Friends::ProfileEmoji::SerializerExtension
 end

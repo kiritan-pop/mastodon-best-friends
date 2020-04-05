@@ -83,4 +83,6 @@ class Announcement < ApplicationRecord
     self.published = true
     self.published_at = Time.now.utc
   end
+
+  include Friends::ProfileEmoji::AnnouncementsExtension
 end

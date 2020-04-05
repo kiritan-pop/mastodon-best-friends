@@ -48,7 +48,15 @@ export default class StatusContent extends React.PureComponent {
 
       let mention = this.props.status.get('mentions').find(item => link.href === item.get('url'));
 
-      if (mention) {
+      if (link.classList.contains('profile-emoji')) {
+        const accountName = link.getAttribute('data-account-name') || '';
+        const profileEmoji = this.props.status.get('profile_emojis').find(item => accountName === item.get('shortcode'));
+        this.props.status.get('profile_emojis').forEach(e => {
+        })
+        if (profileEmoji) {
+          link.addEventListener('click', this.onProfileEmojiClick.bind(this, profileEmoji), false);
+        }
+      } else if (mention) {
         link.addEventListener('click', this.onMentionClick.bind(this, mention), false);
         link.setAttribute('title', mention.get('acct'));
       } else if (link.textContent[0] === '#' || (link.previousSibling && link.previousSibling.textContent && link.previousSibling.textContent[link.previousSibling.textContent.length - 1] === '#')) {
@@ -119,6 +127,13 @@ export default class StatusContent extends React.PureComponent {
     if (this.context.router && e.button === 0 && !(e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       this.context.router.history.push(`/timelines/tag/${hashtag}`);
+    }
+  }
+
+  onProfileEmojiClick = (profileEmoji, e) => {
+    if (this.context.router && e.button === 0) {
+      e.preventDefault();
+      this.context.router.history.push(`/accounts/${profileEmoji.get('account_id')}`);
     }
   }
 

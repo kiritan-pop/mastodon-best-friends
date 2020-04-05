@@ -496,4 +496,6 @@ class Status < ApplicationRecord
       AccountConversation.remove_status(inbox_owner, self)
     end
   end
+
+  include Friends::ProfileEmoji::StatusExtension
 end

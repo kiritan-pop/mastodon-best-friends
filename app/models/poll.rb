@@ -110,4 +110,6 @@ class Poll < ApplicationRecord
   def show_totals_now?
     expired? || !hide_totals?
   end
+
+  include Friends::ProfileEmoji::PollExtension
 end

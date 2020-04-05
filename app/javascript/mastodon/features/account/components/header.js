@@ -80,6 +80,37 @@ class Header extends ImmutablePureComponent {
     return !location.pathname.match(/\/(followers|following)\/?$/);
   }
 
+  onProfileEmojiClick = (profileEmoji, e) => {
+    if (this.context.router && e.button === 0) {
+      e.preventDefault();
+      this.context.router.history.push(`/accounts/${profileEmoji.get('account_id')}`);
+    }
+  }
+  _updateLinks() {
+    const node = this.node;
+
+    if (!node) {
+      return;
+    }
+
+    const links = node.querySelectorAll('a');
+
+    for (var i = 0; i < links.length; ++i) {
+      let link = links[i];
+
+      if (link.classList.contains('profile-emoji')) {
+        const accountName = link.getAttribute('data-account-name') || '';
+        const profileEmoji = this.props.account.get('profile_emojis').find(item => accountName === item.get('shortcode'));
+        if (profileEmoji) {
+          link.addEventListener('click', this.onProfileEmojiClick.bind(this, profileEmoji), false);
+        }
+      }
+
+      link.setAttribute('target', '_blank');
+      link.setAttribute('rel', 'noopener');
+    }
+  }
+
   _updateEmojis () {
     const node = this.node;
 
@@ -103,10 +134,12 @@ class Header extends ImmutablePureComponent {
 
   componentDidMount () {
     this._updateEmojis();
+    this._updateLinks();
   }
 
   componentDidUpdate () {
     this._updateEmojis();
+    this._updateLinks();
   }
 
   handleEmojiMouseEnter = ({ target }) => {

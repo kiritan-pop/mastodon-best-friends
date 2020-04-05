@@ -17,7 +17,7 @@ const messages = defineMessages({
   voted: { id: 'poll.voted', defaultMessage: 'You voted for this answer', description: 'Tooltip of the "voted" checkmark in polls' },
 });
 
-const makeEmojiMap = record => record.get('emojis').reduce((obj, emoji) => {
+const makeEmojiMap = record => record.get('all_emojis').reduce((obj, emoji) => {
   obj[`:${emoji.get('shortcode')}:`] = emoji.toJS();
   return obj;
 }, {});
